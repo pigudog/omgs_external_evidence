@@ -87,9 +87,6 @@ Default checksum targets:
 - `data/processed/fda/fda_effective_date_le_20251029.sqlite`
 - `data/processed/conferences/ovarian_cancer_multiconference_2025_cutoff.json`
 
-Conference JSON is a local verification target and is not included in this
-release package. Raw downloads and embeddings are not checksum targets.
-
 ## PostgreSQL
 
 ```bash
