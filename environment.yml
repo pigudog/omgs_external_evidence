@@ -1,0 +1,9 @@
+name: omgs_external_evidence
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10.16
+  - pip=24.3.1
+  - setuptools=75.8.0
+  - wheel=0.45.1
+  - sqlite=3.47.2
