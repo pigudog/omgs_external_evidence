@@ -1,0 +1,14 @@
+[
+  {
+    "filename": "data/processed/pubmed_mainline/gold.parquet",
+    "sha256": "6a5c2fe363e5b7a6d18b09b4c1d48193ba165848a65f8b34df7a7e97815c57fc"
+  },
+  {
+    "filename": "data/processed/fda/fda_effective_date_le_20251029.sqlite",
+    "sha256": "ff54245b2c52ebfb88b32954d611ca7b91b60ccfe371d1268fa0162cc8112149"
+  },
+  {
+    "filename": "data/processed/conferences/ovarian_cancer_multiconference_2025_cutoff.json",
+    "sha256": "e32e1eb3bc794edb764faaa3d86b2da79053a8d4ed397e48fb0fba2b383f9a6d"
+  }
+]

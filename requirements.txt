@@ -2,8 +2,8 @@
 #
 # This release environment covers source download, PubMed XML parsing,
 # Parquet processing, metadata joins, filtering, Qwen embedding generation,
-# and PostgreSQL upload. Retrieval, BM25 indexing, and reranking dependencies
-# are intentionally out of scope.
+# PostgreSQL upload, and PubMed bm25s index construction. Reranking
+# dependencies are intentionally out of scope.
 
 --extra-index-url https://download.pytorch.org/whl/cu126
 
@@ -16,6 +16,7 @@ polars==1.22.0
 tqdm==4.67.1
 httpx==0.28.1
 psycopg2-binary==2.9.11
+bm25s==0.3.3
 
 accelerate==1.8.1
 huggingface-hub==0.36.2

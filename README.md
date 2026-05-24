@@ -2,7 +2,7 @@
 
 Processing code for OMGS external evidence assets.
 
-Fixed date: `2025-10-29`
+Cutoff date: `2025-10-29`
 
 ## Sources
 
@@ -53,6 +53,9 @@ PubMed filter:
 - `MIN_PUB_DATE = "2015-10-29"`
 - `MAX_PUB_DATE = "2025-10-29"`
 
+For exact journal-metric filtering, place your local `5year.json` at
+`utils/5year.json`; this file is not redistributed.
+
 ## FDA
 
 ```bash
@@ -87,6 +90,9 @@ Default checksum targets:
 - `data/processed/fda/fda_effective_date_le_20251029.sqlite`
 - `data/processed/conferences/ovarian_cancer_multiconference_2025_cutoff.json`
 
+Conference JSON is a local verification target and is not included in this
+release package. Raw downloads and embeddings are not checksum targets.
+
 ## PostgreSQL
 
 ```bash
@@ -98,10 +104,23 @@ set +a
 bash scripts/05_upload_to_postgres.sh
 ```
 
+## PubMed BM25
+
+```bash
+bash scripts/10_build_pubmed_bm25s_index.sh
+```
+
+Output:
+
+- `data/bm25s_pubmed/`
+
+For `omgs_engine`, place or symlink this directory as
+`sources/external_evidence/bm25s_pubmed/`.
+
 ## Scope
 
-This repository releases processing code only. Retrieval, BM25 indexing,
-reranking, and serving code are out of scope.
+This repository releases asset-construction code only. Reranking and serving
+code are out of scope.
 
 ## Source Terms
 

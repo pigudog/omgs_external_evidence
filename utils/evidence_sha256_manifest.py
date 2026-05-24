@@ -6,12 +6,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-
-import pyarrow.parquet as pq
 
 
 DEFAULT_ARTIFACTS = (
@@ -37,59 +33,28 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def parquet_metadata(path: Path) -> dict[str, Any]:
-    meta = pq.ParquetFile(path).metadata
+def is_ignored_manifest_file(path: Path) -> bool:
+    parts = set(path.parts)
+    return (
+        ".ipynb_checkpoints" in parts
+        or "__pycache__" in parts
+        or path.name == ".DS_Store"
+        or path.suffix == ".pyc"
+    )
+
+
+def iter_artifact_files(path: Path) -> list[Path]:
+    if path.is_file():
+        return [path]
+    return sorted(p for p in path.rglob("*") if p.is_file() and not is_ignored_manifest_file(p))
+
+
+def describe_artifact(path: Path, root: Path) -> dict[str, str]:
+    filename = str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
     return {
-        "format": "parquet",
-        "row_count": meta.num_rows,
-        "column_count": meta.num_columns,
-        "schema": [field.name for field in pq.read_schema(path)],
-    }
-
-
-def sqlite_metadata(path: Path) -> dict[str, Any]:
-    tables: dict[str, int] = {}
-    with sqlite3.connect(path) as connection:
-        rows = connection.execute(
-            """
-            SELECT name
-            FROM sqlite_master
-            WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-            ORDER BY name
-            """
-        ).fetchall()
-        for (table_name,) in rows:
-            count = connection.execute(f'SELECT COUNT(*) FROM "{table_name}"').fetchone()[0]
-            tables[table_name] = int(count)
-    return {"format": "sqlite", "tables": tables}
-
-
-def json_metadata(path: Path) -> dict[str, Any]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if isinstance(data, list):
-        return {"format": "json", "record_count": len(data)}
-    if isinstance(data, dict):
-        return {"format": "json", "top_level_keys": sorted(data.keys())}
-    return {"format": "json"}
-
-
-def describe_artifact(path: Path, root: Path) -> dict[str, Any]:
-    suffix = path.suffix.lower()
-    item: dict[str, Any] = {
-        "path": str(path),
-        "relative_path": str(path.relative_to(root)) if path.is_relative_to(root) else str(path),
-        "size_bytes": path.stat().st_size,
+        "filename": filename,
         "sha256": sha256_file(path),
     }
-    if suffix == ".parquet":
-        item.update(parquet_metadata(path))
-    elif suffix in {".sqlite", ".db"}:
-        item.update(sqlite_metadata(path))
-    elif suffix == ".json":
-        item.update(json_metadata(path))
-    else:
-        item["format"] = suffix.lstrip(".") or "unknown"
-    return item
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,7 +80,7 @@ def main() -> int:
     args = parse_args()
     root = repo_root()
     artifact_names = args.artifact or list(DEFAULT_ARTIFACTS)
-    artifacts: list[dict[str, Any]] = []
+    artifacts: list[dict[str, str]] = []
     missing: list[str] = []
 
     for name in artifact_names:
@@ -125,7 +90,8 @@ def main() -> int:
         if not path.exists():
             missing.append(str(path))
             continue
-        artifacts.append(describe_artifact(path.resolve(), root))
+        for file_path in iter_artifact_files(path.resolve()):
+            artifacts.append(describe_artifact(file_path, root))
 
     if missing and args.fail_on_missing:
         raise SystemExit("Missing artifacts:\n" + "\n".join(missing))
@@ -138,15 +104,7 @@ def main() -> int:
         output = root / output
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    manifest = {
-        "manifest_type": "omgs_external_evidence_final_artifacts",
-        "created_at_utc": utc_now_iso(),
-        "cutoff_date": args.cutoff_date,
-        "artifacts": artifacts,
-        "missing_artifacts": missing,
-        "notes": "Checksums apply to final derived artifacts, not to raw source-download state.",
-    }
-    output.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    output.write_text(json.dumps(artifacts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote artifact manifest: {output}")
     print(f"Artifact count: {len(artifacts)}")
     if missing:
